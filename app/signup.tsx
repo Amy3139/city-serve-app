@@ -1,8 +1,11 @@
+import { auth } from '@/config/firebase';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useRouter } from 'expo-router';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +24,7 @@ export default function SignupScreen() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState({
     email: false,
     password: false,
@@ -117,7 +121,7 @@ export default function SignupScreen() {
     }
   };
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     // Mark all fields as touched
     setTouched({
       email: true,
@@ -140,13 +144,39 @@ export default function SignupScreen() {
       return;
     }
 
-    // TODO: Implement actual signup logic here
-    Alert.alert('Success', 'Signup successful!', [
-      {
-        text: 'OK',
-        onPress: () => router.back(),
-      },
-    ]);
+    // Create user account with Firebase
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      Alert.alert(
+        'Success', 
+        'Account created successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]
+      );
+    } catch (error: any) {
+      // Handle Firebase errors
+      let errorMessage = 'Failed to create account. Please try again.';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please sign in instead.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please use a stronger password.';
+      }
+      
+      Alert.alert('Signup Failed', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -245,8 +275,13 @@ export default function SignupScreen() {
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.tint }]}
             onPress={handleSignup}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>Sign Up</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Sign Up</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
