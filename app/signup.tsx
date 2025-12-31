@@ -18,29 +18,125 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [touched, setTouched] = useState({
+    email: false,
+    password: false,
+    confirmPassword: false,
+  });
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
+  // Email validation
+  const validateEmail = (value: string) => {
+    if (!value) {
+      return 'Email is required';
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      return 'Please enter a valid email address';
+    }
+    return '';
+  };
+
+  // Password validation
+  const validatePassword = (value: string) => {
+    if (!value) {
+      return 'Password is required';
+    }
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+    if (!/[a-z]/.test(value)) {
+      return 'Password must contain a lowercase letter';
+    }
+    if (!/[A-Z]/.test(value)) {
+      return 'Password must contain an uppercase letter';
+    }
+    if (!/[0-9]/.test(value)) {
+      return 'Password must contain a number';
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+      return 'Password must contain a special character';
+    }
+    return '';
+  };
+
+  // Confirm password validation
+  const validateConfirmPassword = (value: string) => {
+    if (!value) {
+      return 'Please confirm your password';
+    }
+    if (value !== password) {
+      return 'Passwords do not match';
+    }
+    return '';
+  };
+
+  // Handle email change
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (touched.email) {
+      setEmailError(validateEmail(value));
+    }
+  };
+
+  // Handle password change
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    if (touched.password) {
+      setPasswordError(validatePassword(value));
+    }
+    // Re-validate confirm password if it's been touched
+    if (touched.confirmPassword && confirmPassword) {
+      setConfirmPasswordError(value !== confirmPassword ? 'Passwords do not match' : '');
+    }
+  };
+
+  // Handle confirm password change
+  const handleConfirmPasswordChange = (value: string) => {
+    setConfirmPassword(value);
+    if (touched.confirmPassword) {
+      setConfirmPasswordError(validateConfirmPassword(value));
+    }
+  };
+
+  // Handle field blur
+  const handleBlur = (field: 'email' | 'password' | 'confirmPassword') => {
+    setTouched({ ...touched, [field]: true });
+    
+    if (field === 'email') {
+      setEmailError(validateEmail(email));
+    } else if (field === 'password') {
+      setPasswordError(validatePassword(password));
+    } else if (field === 'confirmPassword') {
+      setConfirmPasswordError(validateConfirmPassword(confirmPassword));
+    }
+  };
+
   const handleSignup = () => {
-    // Basic validation
-    if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+    // Mark all fields as touched
+    setTouched({
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
 
-    if (!email.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
+    // Validate all fields
+    const emailValidation = validateEmail(email);
+    const passwordValidation = validatePassword(password);
+    const confirmPasswordValidation = validateConfirmPassword(confirmPassword);
 
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
-      return;
-    }
+    setEmailError(emailValidation);
+    setPasswordError(passwordValidation);
+    setConfirmPasswordError(confirmPasswordValidation);
 
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+    // If any validation fails, stop
+    if (emailValidation || passwordValidation || confirmPasswordValidation) {
+      Alert.alert('Validation Error', 'Please fix the errors before continuing');
       return;
     }
 
@@ -76,17 +172,22 @@ export default function SignupScreen() {
                 {
                   backgroundColor: colorScheme === 'dark' ? '#333' : '#f5f5f5',
                   color: colors.text,
-                  borderColor: colors.text + '20',
+                  borderColor: emailError ? '#ef4444' : colors.text + '20',
+                  borderWidth: emailError ? 2 : 1,
                 },
               ]}
               placeholder="Enter your email"
               placeholderTextColor={colors.text + '60'}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={handleEmailChange}
+              onBlur={() => handleBlur('email')}
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
             />
+            {emailError && touched.email ? (
+              <Text style={styles.errorText}>{emailError}</Text>
+            ) : null}
           </View>
 
           <View style={styles.inputContainer}>
@@ -97,17 +198,22 @@ export default function SignupScreen() {
                 {
                   backgroundColor: colorScheme === 'dark' ? '#333' : '#f5f5f5',
                   color: colors.text,
-                  borderColor: colors.text + '20',
+                  borderColor: passwordError ? '#ef4444' : colors.text + '20',
+                  borderWidth: passwordError ? 2 : 1,
                 },
               ]}
               placeholder="Enter your password"
               placeholderTextColor={colors.text + '60'}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={handlePasswordChange}
+              onBlur={() => handleBlur('password')}
               secureTextEntry
               autoCapitalize="none"
               autoComplete="password-new"
             />
+            {passwordError && touched.password ? (
+              <Text style={styles.errorText}>{passwordError}</Text>
+            ) : null}
           </View>
 
           <View style={styles.inputContainer}>
@@ -118,17 +224,22 @@ export default function SignupScreen() {
                 {
                   backgroundColor: colorScheme === 'dark' ? '#333' : '#f5f5f5',
                   color: colors.text,
-                  borderColor: colors.text + '20',
+                  borderColor: confirmPasswordError ? '#ef4444' : colors.text + '20',
+                  borderWidth: confirmPasswordError ? 2 : 1,
                 },
               ]}
               placeholder="Confirm your password"
               placeholderTextColor={colors.text + '60'}
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={handleConfirmPasswordChange}
+              onBlur={() => handleBlur('confirmPassword')}
               secureTextEntry
               autoCapitalize="none"
               autoComplete="password-new"
             />
+            {confirmPasswordError && touched.confirmPassword ? (
+              <Text style={styles.errorText}>{confirmPasswordError}</Text>
+            ) : null}
           </View>
 
           <TouchableOpacity
@@ -189,6 +300,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     borderWidth: 1,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   button: {
     height: 50,
