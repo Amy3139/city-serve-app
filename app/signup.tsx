@@ -6,7 +6,6 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,7 +13,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 export default function SignupScreen() {
@@ -24,6 +23,7 @@ export default function SignupScreen() {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [generalError, setGeneralError] = useState('');
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState({
     email: false,
@@ -122,6 +122,9 @@ export default function SignupScreen() {
   };
 
   const handleSignup = async () => {
+    // Clear previous general error
+    setGeneralError('');
+    
     // Mark all fields as touched
     setTouched({
       email: true,
@@ -140,7 +143,7 @@ export default function SignupScreen() {
 
     // If any validation fails, stop
     if (emailValidation || passwordValidation || confirmPasswordValidation) {
-      Alert.alert('Validation Error', 'Please fix the errors before continuing');
+      setGeneralError('Please fix the errors before continuing');
       return;
     }
 
@@ -148,32 +151,40 @@ export default function SignupScreen() {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      Alert.alert(
-        'Success', 
-        'Account created successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      // Success - navigate back
+      router.back();
     } catch (error: any) {
       // Handle Firebase errors
       let errorMessage = 'Failed to create account. Please try again.';
       
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'This email is already registered. Please sign in instead.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address.';
-      } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Email/password accounts are not enabled. Please contact support.';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak. Please use a stronger password.';
+      // Log the full error for debugging
+      console.error('Signup error:', error);
+      
+      // Firebase REST API error format
+      if (error.error?.message) {
+        const firebaseErrorMessage = error.error.message;
+        if (firebaseErrorMessage.includes('EMAIL_EXISTS') || firebaseErrorMessage === 'EMAIL_EXISTS') {
+          errorMessage = 'This email is already registered. Please sign in instead.';
+        } else if (firebaseErrorMessage.includes('INVALID_EMAIL')) {
+          errorMessage = 'Invalid email address.';
+        } else if (firebaseErrorMessage.includes('WEAK_PASSWORD')) {
+          errorMessage = 'Password is too weak. Please use a stronger password.';
+        }
+      }
+      // Firebase SDK error format
+      else if (error.code) {
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = 'This email is already registered. Please sign in instead.';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'Invalid email address.';
+        } else if (error.code === 'auth/operation-not-allowed') {
+          errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = 'Password is too weak. Please use a stronger password.';
+        }
       }
       
-      Alert.alert('Signup Failed', errorMessage);
+      setGeneralError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -272,6 +283,12 @@ export default function SignupScreen() {
             ) : null}
           </View>
 
+          {generalError ? (
+            <View style={styles.generalErrorContainer}>
+              <Text style={styles.generalErrorText}>{generalError}</Text>
+            </View>
+          ) : null}
+
           <TouchableOpacity
             style={[styles.button, { backgroundColor: colors.tint }]}
             onPress={handleSignup}
@@ -292,7 +309,8 @@ export default function SignupScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
+  );{}
+
 }
 
 const styles = StyleSheet.create({
@@ -356,6 +374,19 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginTop: 20,
+    generalErrorContainer: {
+      backgroundColor: '#fee2e2',
+      borderLeftWidth: 4,
+      borderLeftColor: '#ef4444',
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 16,
+    },
+    generalErrorText: {
+      color: '#991b1b',
+      fontSize: 14,
+      lineHeight: 20,
+    },
     alignItems: 'center',
   },
   backButtonText: {
