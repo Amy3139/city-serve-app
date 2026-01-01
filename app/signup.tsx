@@ -151,8 +151,8 @@ export default function SignupScreen() {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Success - navigate back
-      router.back();
+      // Success - navigate to profile
+      router.replace('/profile');
     } catch (error: any) {
       // Handle Firebase errors
       let errorMessage = 'Failed to create account. Please try again.';
@@ -161,26 +161,26 @@ export default function SignupScreen() {
       console.error('Signup error:', error);
       
       // Firebase REST API error format
-      if (error.error?.message) {
-        const firebaseErrorMessage = error.error.message;
-        if (firebaseErrorMessage.includes('EMAIL_EXISTS') || firebaseErrorMessage === 'EMAIL_EXISTS') {
-          errorMessage = 'This email is already registered. Please sign in instead.';
-        } else if (firebaseErrorMessage.includes('INVALID_EMAIL')) {
-          errorMessage = 'Invalid email address.';
-        } else if (firebaseErrorMessage.includes('WEAK_PASSWORD')) {
-          errorMessage = 'Password is too weak. Please use a stronger password.';
-        }
-      }
+      // if (error.error?.message) {
+      //   const firebaseErrorMessage = error.error.message;
+      //   if (firebaseErrorMessage.includes('EMAIL_EXISTS') || firebaseErrorMessage === 'EMAIL_EXISTS') {
+      //     errorMessage = 'This email is already registered. Please sign in instead.';
+      //   } else if (firebaseErrorMessage.includes('INVALID_EMAIL')) {
+      //     errorMessage = 'Invalid email address.';
+      //   // } else if (firebaseErrorMessage.includes('WEAK_PASSWORD')) {
+      //   //   errorMessage = 'Password is too weak. Please use a stronger password.';
+      //   }
+      // }
       // Firebase SDK error format
-      else if (error.code) {
+      if (error.code) {
         if (error.code === 'auth/email-already-in-use') {
           errorMessage = 'This email is already registered. Please sign in instead.';
         } else if (error.code === 'auth/invalid-email') {
           errorMessage = 'Invalid email address.';
         } else if (error.code === 'auth/operation-not-allowed') {
           errorMessage = 'Email/password accounts are not enabled. Please contact support.';
-        } else if (error.code === 'auth/weak-password') {
-          errorMessage = 'Password is too weak. Please use a stronger password.';
+        // } else if (error.code === 'auth/weak-password') {
+        //   errorMessage = 'Password is too weak. Please use a stronger password.';
         }
       }
       
