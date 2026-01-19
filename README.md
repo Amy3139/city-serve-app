@@ -1,8 +1,17 @@
-# Welcome to your Expo app 👋
+# City Serve Monorepo 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is a monorepo project managed with [Turborepo](https://turbo.build/). It contains multiple apps and shared packages.
+
+## Structure
+
+- `apps/`: Contains the applications.
+  - `apps/volunteer-app`: The main volunteer mobile app (Expo).
+- `packages/`: Shared libraries and configuration.
+  - `packages/firebase`: Shared Firebase configuration and utilities.
 
 ## Get started
+
+This project uses [Turborepo](https://turbo.build/) to manage the monorepo. It is recommended to run commands from the root directory.
 
 1. Install dependencies
 
@@ -12,8 +21,19 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
 2. Start the app
 
+   To start all apps (currently only `volunteer-app`):
    ```bash
-   npx expo start
+   npm start
+   ```
+
+   To start specifically the `volunteer-app`:
+   ```bash
+   npm run volunteer-app
+   ```
+
+   Alternatively, use `turbo` directly:
+   ```bash
+   npx turbo dev
    ```
 
 In the output, you'll find options to open the app in a
